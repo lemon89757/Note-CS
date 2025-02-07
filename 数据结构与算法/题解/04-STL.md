@@ -1,6 +1,7 @@
 # STL(Standard Template Library)
 
 >[runoob.com](https://www.runoob.com/cplusplus/cpp-stl-tutorial.html)
+>[C语言中文网](https://c.biancheng.net/stl/)
 
 `C++` 标准模板库的核心包括以下重要组件：
 * 容器(Containers)
@@ -18,7 +19,7 @@
 * 适配器(Adapters)
 **用于将一种容器或迭代器适配成另一种容器或迭代器**，以满足特定的需求。包括：栈适配器（stack adapter）、队列适配器（queue adapter）和优先队列适配器（priority queue adapter）等。
 
-* 空间配置器
+* 空间配置器（内存分配器）
 
 ## 容器
 用来存储数据的序列，它们提供了**不同的存储方式和访问模式**
@@ -39,6 +40,31 @@
 
 * `std::vector`
 1. 动态数组，支持快速随机访问
+2. 与 C++ 数组比较
+   1. 定义一个数组，需要事先确定好数组的长度 $n$，**$n$ 必须为常量**
+   ```C++
+   int a[n];   // n 必须为常量
+   ```
+   如果在实际应用中无法确定数组长度，则一般会将数组长度设为最大的可能值，但这很有可能*导致存储空间的浪费*。
+   2. 在**堆空间**中动态申请内存，此时**长度可以是变量**
+   ```C++
+   int *p = new int[n];
+   ```
+   在这种方式下，数组长度固定，当出现空间不足时需要手动加大存储空间
+   ```C++
+   int *temp = new int[m];
+   memcpy(temp, p, sizeof(int)*n); // 将原内存空间的数据全部赋值到新申请的内存空间中
+   delete [] p;
+   p = temp;
+   ```
+   3. 采用 `vector` 时大多数细节将不需要程序员关心
+   ```C++
+   vector<int> a;
+   a.push_back(1);
+   a.resize(100);    // resize 并不直接改变容量，而是通过改变 size 的大小间接地导致容量的增加
+   a.clear();        // 直接删除 a 中的所有元素；a 的 size 变为 0，但 a 的 capacity 可能保持不变
+   a.resize(20, -1); // 重新调整 a 的大小，并存储 20 个 -1 元素
+   ```
 
 
 * `std::deque`
