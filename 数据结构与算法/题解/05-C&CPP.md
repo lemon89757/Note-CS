@@ -155,5 +155,40 @@
        类型安全：通过 _t 后缀的类型定义可以提高代码的类型安全性，避免类型混淆。
        通过这些 _t 类型，Linux编程中的代码更加清晰、一致且类型安全。
 
+## 指针
+1. 指针的值还是指针指向的值
+```C
+static const unsigned char fontdata_8x16[4096] = {..};
 
+void lcd_pub_ascii(int x, int y, unsigned char c){
+    unsigned char *dots = (unsigned char *)&fontdata_8x16[c * 16];
+    int i, b;
+    unsigned char byte;
+
+    for(int i = 0; i < 16; i++){
+        byte = dots[i];
+        for(b = 7; b >=0; b--){
+            if(byte & (1 << b)){
+                lcd_put_pixel(x + 7 - b, y + i, 0xffffff);  // 白色
+            }else{
+                lcd_put_pixel(x + 7 - b, y + i, 0);         // 黑色
+            }
+        }
+    }
+}
+```
+其中 `byte = dots[i]`，那 `byte` 应该获得的是指针的值还是指针指向的值?
+
+在C语言中，`byte = dots[i];` 这行代码中，`byte` 获得的是指针 `dots` 指向的值，而不是指针本身的值。具体来说：
+- `dots` 是一个指向 unsigned char 的指针。
+- **`dots[i]` 表示访问指针 dots 指向的数组中的第 i 个元素**。
+
+因此，`byte = dots[i];` 将 `dots` 指向的数组中的第 `i` 个**元素的值**赋给变量 `byte`。
+
+详细解释
+指针和数组的关系：
+- 在C语言中，**数组名可以被视为指向数组首元素的指针**。例如，`dots` 是一个指向 `unsigned char` 的指针。**`dots[i]` 等价于 `*(dots + i)`，即访问指针 `dots` 指向的数组中的第 `i` 个元素**。
+- 代码中的 `dots[i]`：`dots[i]` 访问的是指针 `dots` 指向的数组中的第 `i` 个元素。
+
+因此，`byte = dots[i];` 将 `dots` 指向的数组中的第 `i` 个元素的值赋给变量 `byte`。
 
