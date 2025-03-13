@@ -192,3 +192,53 @@ void lcd_pub_ascii(int x, int y, unsigned char c){
 
 因此，`byte = dots[i];` 将 `dots` 指向的数组中的第 `i` 个元素的值赋给变量 `byte`。
 
+2. 关于数组指针
+- 在 linux 中调用 ioctl 函数时：
+    ```C
+    int fd;
+    int len;
+    unsigned int evbit[2];
+    ...
+    len = ioctl(fd, EVIOCGBIT(0, sizeof(evbit)), &evbit);
+    ```
+  - 在这里给 ioctl 传递的第三个参数为：`&evbit`，而不是 `evbit`:
+    1. `&evbit`: 表示**对整个数组取址**，得到的是一个指向数组的指针；类型是 **unsigned int (*)[2]**，即指向一个包含两个 unsinged int 的数组的指针
+    2. `evbit`:  数组名，当它作为参数传递时，会退化为**指向数组首元素的指针**；类型是 **unsigned int***，指向数组的第一个元素
+    3. **unsigned int (*)[2]**: 是一个指向包含两个 unsigned int 的数组的指针。**它指向的是一个完整的数组对象，它的类型是一个数组指针**，而不是一个指针的指针，通常用于传递整个数组作为参数
+    4. **unsigned int ****: 是一个指向指针的指针，它通常用于指向一个指针数组或动态分配的二维数组。它指向的是一个指针变量，**类型是指针的指针**，通常用于动态分配的二维数组或指针数组
+    5. `unsigned int (*)[2]` 指向的是一个连续的内存块，包含两个 `unsigned int` 元素，`unsigned int **` 指向的是一个指针变量，该指针变量可以指向另一个指针或数组
+    6. `ioctl` 在 `EVIOCGBIT` 这个 `request` 的情况下，要求第三个参数是一个指向缓冲区的指针，用于存储返回的数据，缓冲区大小由 `EVIOCGBIT` 的第二个参数 `len` 指定。使用 `&evbit` 明确告诉 `ioctl`，`evbit` 是一个完整的数组，避免歧义
+  - 一个例子：
+    ```C
+    #include <stdio.h>
+
+    void print_array(unsigned int (*arr)[2]){
+        // 数组指针
+        printf("Array elements: %u, %u.\n", (*arr)[0], (*arr)[1]);
+    }
+
+    void print_pointer(unsigned int** ptr){
+        printf("Pointer elements: %u, %u.\n", **ptr, *(*ptr + 1));
+        // 上述等价于：printf("Pointer elements: %u, %u.\n", *(ptr[0]), *(ptr[1]));
+    }
+
+    int main(){
+        unsigned int arr[2] = {1, 2};
+        unsigned int (*ptr1)[2] = &arr;     // 指向数组的指针
+
+        unsigned int a = 1;
+        unsigned int b = 2;
+        unsigned int *ptr2 = &a;
+        unsigned int *ptr3 = &b;
+        unsigned int **ptr4 = &ptr2;        // 指向指针的指针
+
+        print_array(ptr1);
+        print_pointer(ptr4);
+
+        return 0;
+    }
+    ```
+    1. 在 `C/C++` 中，指针的下标操作符 `[]` 和解引用操作符 `*` 是可以结合使用的，且两种写法在功能上是等价的。
+    2. 在表达式 `*(ptr[0])` 中，括号 `()` 是可以省略的，因为 `[]` 的优先级高于 `*`，但省略后可能会导致语义上的歧义，甚至引发编译错误。使用括号可以更清晰地表达意图，避免潜在的歧义。
+    3. `print_pointer(ptr4);` 可能会访问到未被分配的内存而导致程序出错（未定义的行为，undefined behavior），因为在 `ptr2 = &a`、`a = 1`中并没有分配连续的内存空间给 `a`，所以使用 `*(*ptr + 1)` 是非法的。可以将上述代码修改为 `unsigned int values[2] = {1, 2}; unsigned int* ptr2 = values; unsigned int **ptr4 = &ptr2;`
+
