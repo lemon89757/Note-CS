@@ -204,8 +204,8 @@ void lcd_pub_ascii(int x, int y, unsigned char c){
   - 在这里给 ioctl 传递的第三个参数为：`&evbit`，而不是 `evbit`:
     1. `&evbit`: 表示**对整个数组取址**，得到的是一个指向数组的指针；类型是 **unsigned int (*)[2]**，即指向一个包含两个 unsinged int 的数组的指针
     2. `evbit`:  数组名，当它作为参数传递时，会退化为**指向数组首元素的指针**；类型是 **unsigned int***，指向数组的第一个元素
-    3. **unsigned int (*)[2]**: 是一个指向包含两个 unsigned int 的数组的指针。**它指向的是一个完整的数组对象，它的类型是一个数组指针**，而不是一个指针的指针，通常用于传递整个数组作为参数
-    4. **unsigned int ****: 是一个指向指针的指针，它通常用于指向一个指针数组或动态分配的二维数组。它指向的是一个指针变量，**类型是指针的指针**，通常用于动态分配的二维数组或指针数组
+    3. `unsigned int (*)[2]`: 是一个指向包含两个 unsigned int 的数组的指针。**它指向的是一个完整的数组对象，它的类型是一个数组指针**，而不是一个指针的指针，通常用于传递整个数组作为参数
+    4. `unsigned int **`: 是一个指向指针的指针，它通常用于指向一个指针数组或动态分配的二维数组。它指向的是一个指针变量，**类型是指针的指针**，通常用于动态分配的二维数组或指针数组
     5. `unsigned int (*)[2]` 指向的是一个连续的内存块，包含两个 `unsigned int` 元素，`unsigned int **` 指向的是一个指针变量，该指针变量可以指向另一个指针或数组
     6. `ioctl` 在 `EVIOCGBIT` 这个 `request` 的情况下，要求第三个参数是一个指向缓冲区的指针，用于存储返回的数据，缓冲区大小由 `EVIOCGBIT` 的第二个参数 `len` 指定。使用 `&evbit` 明确告诉 `ioctl`，`evbit` 是一个完整的数组，避免歧义
   - 一个例子：
@@ -241,6 +241,20 @@ void lcd_pub_ascii(int x, int y, unsigned char c){
     1. 在 `C/C++` 中，指针的下标操作符 `[]` 和解引用操作符 `*` 是可以结合使用的，且两种写法在功能上是等价的。
     2. 在表达式 `*(ptr[0])` 中，括号 `()` 是可以省略的，因为 `[]` 的优先级高于 `*`，但省略后可能会导致语义上的歧义，甚至引发编译错误。使用括号可以更清晰地表达意图，避免潜在的歧义。
     3. `print_pointer(ptr4);` 可能会访问到未被分配的内存而导致程序出错（未定义的行为，undefined behavior），因为在 `ptr2 = &a`、`a = 1`中并没有分配连续的内存空间给 `a`，所以使用 `*(*ptr + 1)` 是非法的。可以将上述代码修改为 `unsigned int values[2] = {1, 2}; unsigned int* ptr2 = values; unsigned int **ptr4 = &ptr2;`
+3. `sizeof` 求数组大小
+```C++
+// 通过 new 申请动态数组时
+events = new epoll_event[MAX_EVENTS];
+// events 为 epoll_event 类型的指针；它得到的是通过 new 分配的内存首地址
+// sizeof(events) 求得的是指针的大小
+bzero(events, sizeof(*events) * MAX_EVENTS); 
+
+
+// 固定长度数组时
+char buf[READ_BUFFER];
+// sizeof(buf) 求数组大小，只有在特定情况下，数组名才会退化为指针（指向数组首元素）
+bzero(&buf, sizeof(buf));
+```
 
 ## C++
 ### 左值与右值
